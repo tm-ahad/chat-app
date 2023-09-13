@@ -3,8 +3,8 @@ package main
 import (
 	"chat-app/connection"
 	"chat-app/db"
-	"chat-app/enums"
 	"chat-app/handlers"
+	"chat-app/request"
 	"chat-app/structs"
 	"fmt"
 	"log"
@@ -12,51 +12,10 @@ import (
 	"strings"
 )
 
-var idGen = structs.NewIdGen()
+var idGen = structs.NewIdGen() 
 var addr  = ":9781"
 
 var UserDb = db.NewDataBase("./storage/users.db")
-var MsgDb = db.NewDataBase("./storage/messages.db")
-
-func handleRequest(req structs.Request, conns []net.Conn) string {
-	switch req.Action {
-	case action.Say:
-		empty_user := structs.User{}
-		empty_user.Init(nil, "")
-
-		obj 	:= UserDb.Find(req.Addr.String(), empty_user);
-		user 	:= structs.User{}
-
-		if obj == nil {
-			return "User not found"
-		} else {
-			user = obj.(structs.User)
-		}
-
-		text := req.Param[0]
-		var msg = structs.Message {
-			SendBy: user.Name(),
-			Text:   text,
-			Id:     idGen.Gen(),
-		}
-		string_msg  := fmt.Sprintf("%s:%s", user.Name(), msg.Text)
-
-		MsgDb.Write(msg)
-		connection.Send(conns, string_msg)
-
-		return "Message saved successfully!"
-	case action.SetUser:
-		name := req.Param[0]
-		user := structs.User{}
-
-		user.Init(req.Addr, name)
-
-		UserDb.Write(user)
-		return "User saved."
-	}
-
-	return "Invalid action."
-}
 
 func main() {
 	log.SetFlags(log.Lshortfile)
@@ -82,7 +41,7 @@ func main() {
 			req := structs.Request{}
 			req.Parse(q, addr)
 
-			resp := handleRequest(req, conns)
+			resp := request.Handle(req, conns)
 
 			empty_user := structs.User{}
 			empty_user.Init(nil, "")
