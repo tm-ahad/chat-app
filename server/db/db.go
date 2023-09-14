@@ -24,7 +24,7 @@ func (db DataBase) Write(obj interfaces.Model) {
 	handlers.HandleErr(err)
 }
 
-func (db DataBase) Find(key any, obj interfaces.Model) interfaces.Model {
+func (db DataBase) Find(key string, obj interfaces.Model) interfaces.Model {
 	val := db.cache[key]
 
 	if val == nil {
@@ -36,6 +36,7 @@ func (db DataBase) Find(key any, obj interfaces.Model) interfaces.Model {
 			}
 
 			obj.Unmarshal(line)
+			//fmt.Printf("%s %s %t\n", obj.Unique(), key, obj.Unique() == key)
 
 			if obj.Unique() == key {
 				db.cache[key] = obj
@@ -75,19 +76,18 @@ func (db DataBase) Remove(key any) {
 
 func (db DataBase) ReplaceMsgText(key any, update_with string) {
 	split 			:= strings.Split(db.cont, "\n")
-	updated_cont 	:= strings.Builder{}
+	updated_cont 	:= strings.Builder {}
 
 	for _, line := range split {
 		line = fmt.Sprintf("%s\n", line)
 
 		if strings.HasPrefix(line, key.(string)) {
 			col 		:= uint(strings.Index(line, ":"))
-			rng 		:= structs.NewRange(col, uint(len(line)-1))
+			rng 		:= structs.NewRange(col+1, uint(len(line)))
 
 			upd_line 	:= helpers.ReplaceRange(line, rng, update_with)
 
 			updated_cont.WriteString(upd_line)
-			
 		} else {
 			updated_cont.WriteString(line)
 		}

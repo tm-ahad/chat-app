@@ -42,8 +42,8 @@ func (m *MessageCoreImpl) Unmarshal(s string) {
 	m.Text = msg_text
 }
 
-func (m MessageCoreImpl) Unique() any {
-	return m.Id
+func (m MessageCoreImpl) Unique() string {
+	return fmt.Sprint(m.Id)
 }
 
 //Wrapper for MessageCoreImpl
@@ -64,7 +64,7 @@ func (m Message) Unmarshal(s string) {
 	m.inner.Unmarshal(s)
 }
 
-func (m Message) Unique() any {
+func (m Message) Unique() string {
 	return m.inner.Unique()
 }
 

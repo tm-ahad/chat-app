@@ -36,7 +36,7 @@ func (user *UserCoreImpl) Unmarshal(s string) {
 	user.Addr = addr
 }
 
-func (user UserCoreImpl) Unique() any {
+func (user UserCoreImpl) Unique() string {
 	return user.Addr.String()
 }
 
@@ -57,7 +57,7 @@ func (user User) Unmarshal(s string) {
 	user.inner.Unmarshal(s)
 }
 
-func (user User) Unique() any {
+func (user User) Unique() string {
 	return user.inner.Unique()
 }
 

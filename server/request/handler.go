@@ -5,10 +5,8 @@ import (
 	"chat-app/db"
 	"chat-app/enums/action"
 	"chat-app/enums/response"
-	"chat-app/handlers"
 	"chat-app/structs"
 	"net"
-	"strconv"
 )
 
 var UserDb = db.NewDataBase("./storage/users.db")
@@ -17,7 +15,10 @@ var MsgDb = db.NewDataBase("./storage/messages.db")
 var idGen = structs.NewIdGen()
 
 func Handle(req structs.Request, conns []net.Conn) string {
-	empty_user := structs.User{}
+	empty_msg := structs.Message {}
+	empty_user := structs.User {}
+
+	empty_msg.Init(0, "", "")
 	empty_user.Init(nil, "")
 
 	switch req.Action {
@@ -45,7 +46,7 @@ func Handle(req structs.Request, conns []net.Conn) string {
 		return response.MessageSaved
 	case action.CreateUser:
 		name := req.Param[0]
-		user := structs.User{}
+		user := structs.User {}
 
 		user.Init(req.Addr, name)
 
@@ -56,7 +57,7 @@ func Handle(req structs.Request, conns []net.Conn) string {
 		rb := UserDb.Find(req.Addr.String(), empty_user).(structs.User)
 
 		if rb.Name() == name {
-			user := structs.User{}
+			user := structs.User {}
 			user.Init(req.Addr, name)
 
 			UserDb.Remove(name)
@@ -67,11 +68,7 @@ func Handle(req structs.Request, conns []net.Conn) string {
 
 		
 	case action.RemoveMsg:
-		id, err := strconv.ParseUint(req.Param[0], 10, 64)
-		handlers.HandleErr(err)
-
-		empty_msg := structs.Message{}
-		empty_msg.Init(0, "", "")
+		id := req.Param[0]
 
 		obj := MsgDb.Find(id, empty_msg);
 		msg := structs.Message{}
@@ -95,8 +92,16 @@ func Handle(req structs.Request, conns []net.Conn) string {
 		replace_with 	:= req.Param[1]
 		id 				:= req.Param[0]
 
-		msg 			:= MsgDb.Find(id, structs.Message{}).(structs.Message)
-		rb 				:= UserDb.Find(req.Addr.String(), structs.User{}).(structs.User)
+		obj 			:= MsgDb.Find(id, empty_msg)
+		msg				:= structs.Message {}
+
+		if obj == nil {
+			return response.MessageNotFound
+		} else {
+			msg = obj.(structs.Message)
+		}
+
+		rb 				:= UserDb.Find(req.Addr.String(), empty_user).(structs.User)
 
 		connection.Send(conns, req.RawBody)
 

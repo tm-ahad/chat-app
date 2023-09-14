@@ -2,6 +2,6 @@ package interfaces
 
 type Model interface {
 	Marshal() 			string
-	Unique()  			any
+	Unique()  			string
 	Unmarshal(string)   
 }

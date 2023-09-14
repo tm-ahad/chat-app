@@ -38,12 +38,12 @@ func main() {
 		split  = split[:len(split)-1]
 
 		for _, q := range split {
-			req := structs.Request{}
+			req := structs.Request {}
 			req.Parse(q, addr)
 
 			resp := request.Handle(req, conns)
 
-			empty_user := structs.User{}
+			empty_user := structs.User {}
 			empty_user.Init(nil, "")
 	
 			_, err = conn.WriteTo([]byte(resp), addr)
