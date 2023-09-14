@@ -7,13 +7,17 @@ import (
 	"fmt"
 )
 
-type Message struct {
+type MessageCoreImpl struct {
 	SendBy string
-	Id     uint64
 	Text   string
+	Id     uint64
 }
 
-func (m Message) Marshal() string {
+type Message struct {
+	inner *MessageCoreImpl
+}
+
+func (m MessageCoreImpl) Marshal() string {
 	return fmt.Sprintf(
 		"%d %s:%s\n",
 		m.Id,
@@ -22,7 +26,7 @@ func (m Message) Marshal() string {
 	)
 }
 
-func (m Message) Unmarshal(s string) {
+func (m *MessageCoreImpl) Unmarshal(s string) {
 	split 		:= strings.Split(s, " ")
 	id, e 	    := strconv.ParseUint(split[0], 10, 64)
 	handlers.HandleErr(e)
@@ -38,6 +42,36 @@ func (m Message) Unmarshal(s string) {
 	m.Text = msg_text
 }
 
-func (m Message) Unique() any {
+func (m MessageCoreImpl) Unique() any {
 	return m.Id
+}
+
+//Wrapper for MessageCoreImpl
+
+func (m *Message) Init(id uint64, send_by string, text string) {
+	m.inner = &MessageCoreImpl {
+		SendBy	: send_by,
+		Text	: text,
+		Id		: id,
+	}
+}
+
+func (m Message) Marshal() string {
+	return m.inner.Marshal()
+}
+
+func (m Message) Unmarshal(s string) {
+	m.inner.Unmarshal(s)
+}
+
+func (m Message) Unique() any {
+	return m.inner.Unique()
+}
+
+func (m Message) SendBy() any {
+	return m.inner.SendBy
+}
+
+func (m *Message) SetText(text string) {
+	m.inner.Text = text
 }

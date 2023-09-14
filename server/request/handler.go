@@ -5,8 +5,10 @@ import (
 	"chat-app/db"
 	"chat-app/enums/action"
 	"chat-app/enums/response"
+	"chat-app/handlers"
 	"chat-app/structs"
 	"net"
+	"strconv"
 )
 
 var UserDb = db.NewDataBase("./storage/users.db")
@@ -15,11 +17,11 @@ var MsgDb = db.NewDataBase("./storage/messages.db")
 var idGen = structs.NewIdGen()
 
 func Handle(req structs.Request, conns []net.Conn) string {
+	empty_user := structs.User{}
+	empty_user.Init(nil, "")
+
 	switch req.Action {
 	case action.Say:
-		empty_user := structs.User{}
-		empty_user.Init(nil, "")
-
 		obj 	:= UserDb.Find(req.Addr.String(), empty_user);
 		user 	:= structs.User{}
 
@@ -30,13 +32,11 @@ func Handle(req structs.Request, conns []net.Conn) string {
 		}
 
 		user_name := user.Name()
-
 		text := req.Param[0]
-		var msg = structs.Message {
-			SendBy: user_name,
-			Text:   text,
-			Id:     idGen.Gen(),
-		}
+
+		var msg = structs.Message {}
+		msg.Init(idGen.Gen(), user_name, text)
+
 		string_msg  := response.Marshal(action.Say, []string{user_name, text})
 
 		MsgDb.Write(msg)
@@ -53,10 +53,6 @@ func Handle(req structs.Request, conns []net.Conn) string {
 		return "User saved."
 	case action.RemoveUser:
 		name := req.Param[0]
-
-		empty_user := structs.User{}
-		empty_user.Init(nil, "");
-
 		rb := UserDb.Find(req.Addr.String(), empty_user).(structs.User)
 
 		if rb.Name() == name {
@@ -66,30 +62,45 @@ func Handle(req structs.Request, conns []net.Conn) string {
 			UserDb.Remove(name)
 			return response.UserRemoved
 		} else {
-			return "Access denied."
+			return response.AccessDenied
 		}
 
 		
 	case action.RemoveMsg:
-		id 	:= req.Param[0]
-		msg := MsgDb.Find(id, structs.Message{}).(structs.Message)
-		rb 	:= UserDb.Find(req.Addr.String(), structs.User{}).(structs.User)
+		id, err := strconv.ParseUint(req.Param[0], 10, 64)
+		handlers.HandleErr(err)
 
-		if rb.Name() == msg.SendBy {
+		empty_msg := structs.Message{}
+		empty_msg.Init(0, "", "")
+
+		obj := MsgDb.Find(id, empty_msg);
+		msg := structs.Message{}
+
+		if obj == nil {
+			return response.MessageNotFound
+		} else {
+			msg = obj.(structs.Message)
+		}
+
+		rb 	:= UserDb.Find(req.Addr.String(), empty_user).(structs.User)
+		connection.Send(conns, req.RawBody)
+
+		if msg.SendBy() == rb.Name() {
 			MsgDb.Remove(id)
 			return response.MessageRemoved
 		} else {
 			return response.AccessDenied
 		}
-
 	case action.ReplaceMsg:
-		id 				:= req.Param[0]
 		replace_with 	:= req.Param[1]
+		id 				:= req.Param[0]
 
 		msg 			:= MsgDb.Find(id, structs.Message{}).(structs.Message)
 		rb 				:= UserDb.Find(req.Addr.String(), structs.User{}).(structs.User)
 
-		if rb.Name() == msg.SendBy {
+		connection.Send(conns, req.RawBody)
+
+		if msg.SendBy() == rb.Name() {
 			MsgDb.ReplaceMsgText(id, replace_with)
 			return response.MessageRemoved
 		} else {

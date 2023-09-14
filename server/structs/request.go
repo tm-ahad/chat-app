@@ -6,9 +6,10 @@ import (
 )
 
 type Request struct {
-	Param  []string
-	Addr   net.Addr
-	Action string
+	Param  	[]string
+	Addr   	net.Addr
+	Action 	string
+	RawBody string
 }
 
 func (req *Request) Parse(s string, addr net.Addr)  {
@@ -17,6 +18,7 @@ func (req *Request) Parse(s string, addr net.Addr)  {
 
 	req.Action = action
 	req.Addr = addr
+	req.RawBody = s
 
 	rem := split[1:]
 

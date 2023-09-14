@@ -55,7 +55,7 @@ func (db DataBase) Remove(key any) {
 
 	for _, line := range split {
 		line = fmt.Sprintf("%s\n", line)
-		if !strings.HasPrefix(line, key.(string)) {
+		if !strings.HasPrefix(line, fmt.Sprint(key)) {
 			updated_cont.WriteString(line)
 		}
 	}
@@ -107,7 +107,7 @@ func (db DataBase) ReplaceMsgText(key any, update_with string) {
 
 	if val != nil {
 		db.cache[key] = nil
-		msg.Text = update_with
+		msg.SetText(update_with)
 
 		db.cache[key] = msg
 	}

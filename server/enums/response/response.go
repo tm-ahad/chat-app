@@ -6,9 +6,10 @@ import (
 )
 
 const (
+	MessageNotFound = "Message not found."
 	MessageRemoved 	= "Message removed."
 	MessageUpdated  = "Message updated."
-	MessageSaved 	= "Message saved successfully"
+	MessageSaved 	= "Message saved successfully."
 	UserNotFound    = "User not found."
 	AccessDenied 	= "Access denied."
 	UserCreated		= "User created."
