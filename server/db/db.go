@@ -13,6 +13,7 @@ import (
 
 type DataBase struct {
 	cache  		map[any]interfaces.Model
+	keys 		[]string
 	values 		[]string
 	file 		*os.File
 	cont 		string
@@ -22,6 +23,10 @@ func (db DataBase) Write(obj interfaces.Model) {
 	_, err := db.file.WriteString(obj.Marshal())
 
 	handlers.HandleErr(err)
+}
+
+func (db DataBase) RawCont() string {
+	return db.cont
 }
 
 func (db DataBase) Find(key string, obj interfaces.Model) interfaces.Model {
@@ -36,7 +41,6 @@ func (db DataBase) Find(key string, obj interfaces.Model) interfaces.Model {
 			}
 
 			obj.Unmarshal(line)
-			//fmt.Printf("%s %s %t\n", obj.Unique(), key, obj.Unique() == key)
 
 			if obj.Unique() == key {
 				db.cache[key] = obj
@@ -119,6 +123,10 @@ func (db DataBase) Values() []string {
 	return db.values
 }
 
+func (db DataBase) Keys() []string {
+	return db.keys
+}
+
 func NewDataBase(path string) DataBase {
 	file, err := os.OpenFile(path, syscall.O_RDWR, 0666)
 	handlers.HandleErr(err)
@@ -131,10 +139,12 @@ func NewDataBase(path string) DataBase {
 	_, er := file.Read(b)
 	handlers.HandleErr(er)
 
-	cont := string(b)
+	cont         := string(b)
+	keys, values := helpers.KeysAndValues(cont)
 
 	return DataBase {
-		values: 	helpers.Values(cont),
+		values: 	values,
+		keys:		keys,
 		cache:  	make(map[any]interfaces.Model),
 		file: 		file,
 		cont: 		cont,

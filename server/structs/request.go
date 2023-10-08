@@ -1,8 +1,8 @@
 package structs
 
 import (
-	"strings"
 	"net"
+	"strings"
 )
 
 type Request struct {

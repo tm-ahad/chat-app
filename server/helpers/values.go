@@ -2,16 +2,20 @@ package helpers
 
 import "strings"
 
-func Values(s string) []string {
-	var values []string
-	split := strings.Split(s, "\n")
+func KeysAndValues(s string) ([]string, []string) {
+	values := make([]string, 0)
+	keys   := make([]string, 0)
+	split  := strings.Split(s, "\n")
 	
 	for _, line := range split {
 		if len(line) == 0 {continue}
 
 		kv := strings.Split(line, ":")
-		values = append(values, kv[1])
+
+		key     := kv[0]
+		values  = append(values, kv[1])
+		keys    = append(keys, key)
 	}
 
-	return values
+	return keys, values
 }
