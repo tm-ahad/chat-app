@@ -1,7 +1,7 @@
 package structs
 
 import (
-	"chat-app/handlers"
+	"chat-app-server/handlers"
 	"strconv"
 	"strings"
 	"fmt"
@@ -19,7 +19,7 @@ type Message struct {
 
 func (m MessageCoreImpl) Marshal() string {
 	return fmt.Sprintf(
-		"%d %s:%s\n",
+		"%d %s:%s",
 		m.Id,
 		m.SendBy,
 		m.Text,
@@ -37,9 +37,9 @@ func (m *MessageCoreImpl) Unmarshal(s string) {
 	user_name 	:= split2[0]
 	msg_text  	:= split2[1]
 
-	m.Id = id;
-	m.SendBy = user_name;
+	m.SendBy = user_name
 	m.Text = msg_text
+	m.Id = id
 }
 
 func (m MessageCoreImpl) Unique() string {

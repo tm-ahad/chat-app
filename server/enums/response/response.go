@@ -15,7 +15,9 @@ const (
 	AccessDenied 	= "Access denied."
 	UserCreated		= "User created."
 	UserRemoved		= "User removed."
+	UserExists      = "User exists."
 	UserSaved 		= "User saved."
+	Empty           = ""
 )
 
 func Marshal(action string, params []string) string {

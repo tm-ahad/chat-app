@@ -1,7 +1,7 @@
 package structs
 
 import (
-	"chat-app/handlers"
+	"chat-app-server/handlers"
 	"fmt"
 	"net"
 	"strings"
@@ -18,7 +18,7 @@ type User struct {
 
 func (user UserCoreImpl) Marshal() string {
 	return fmt.Sprintf(
-		"%s:%s\n",
+		"%s:%s",
 		user.Name,
 		user.Addr.String(),
 	)
@@ -37,7 +37,7 @@ func (user *UserCoreImpl) Unmarshal(s string) {
 }
 
 func (user UserCoreImpl) Unique() string {
-	return user.Addr.String()
+	return user.Name
 }
 
 //Wrapper for UserCoreImpl
@@ -63,4 +63,8 @@ func (user User) Unique() string {
 
 func (user User) Name() string {
 	return user.inner.Name
+}
+
+func (user User) Addr() net.Addr {
+	return user.inner.Addr
 }

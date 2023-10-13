@@ -1,11 +1,11 @@
 package main
 
 import (
-	"chat-app/connection"
-	"chat-app/db"
-	"chat-app/handlers"
-	"chat-app/request"
-	"chat-app/structs"
+	"chat-app-server/db"
+	"chat-app-server/handlers"
+	"chat-app-server/request"
+	"chat-app-server/structs"
+	"chat-app-server/usernetwork"
 	"fmt"
 	"log"
 	"net"
@@ -24,8 +24,7 @@ func main() {
 	handlers.HandleErr(err)
 
 	fmt.Println("Server started at http://127.0.0.1:9781")
-
-	conns := connection.BuildConnection(UserDb.Values(), addr)
+	user_network := usernetwork.New(addr, UserDb.Values())
 
 	for {
 		buf := make([]byte, 2048)
@@ -35,13 +34,17 @@ func main() {
 		fmt.Printf("Request received from %s\n", addr.String())
 
 		split := strings.Split(s, ";")
-		split  = split[:len(split)-1]
+		sl    := len(split)
+
+		if sl > 1 {
+			split = split[:sl-1]
+		}
 
 		for _, q := range split {
 			req := structs.Request {}
-			req.Parse(q, addr)
+			req.Parse(q, addr, conn)
 
-			resp := request.Handle(req, conns)
+			resp := request.Handle(req, user_network)
 
 			empty_user := structs.User {}
 			empty_user.Init(nil, "")

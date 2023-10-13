@@ -1,14 +1,13 @@
 package request
 
 import (
-	"chat-app/connection"
-	"chat-app/db"
-	"chat-app/enums/action"
-	"chat-app/enums/response"
-	"chat-app/sa"
-	"chat-app/structs"
-	"fmt"
-	"net"
+	"chat-app-server/db"
+	"chat-app-server/enums/action"
+	"chat-app-server/enums/response"
+	"chat-app-server/interfaces"
+	"chat-app-server/sa"
+	"chat-app-server/structs"
+	"chat-app-server/usernetwork"
 )
 
 var UserDb = db.NewDataBase("./storage/users.db")
@@ -16,18 +15,24 @@ var MsgDb  = db.NewDataBase("./storage/messages.db")
 
 var idGen = structs.NewIdGen()
 
-func Handle(req structs.Request, conns []net.Conn) string {
+func MatchUserByAddr(usr interfaces.Model, match_to string) bool {
+	u := usr.(structs.User)
+
+	return u.Addr().String() == match_to
+}
+
+func Handle(req structs.Request, user_network usernetwork.UserNetwork) string {
 	nil_msg := structs.Message {}
 	nil_user := structs.User {}
 
 	nil_msg.Init(0, "", "")
 	nil_user.Init(nil, "")
 
-	fmt.Printf("%+v\n", req)
+	user_network.Insert(req.Conn, req.Addr)
 
 	switch req.Action {
 	case action.Say:
-		obj 	:= UserDb.Find(req.Addr.String(), nil_user);
+		obj 	:= UserDb.Find(req.Addr.String(), nil_user, MatchUserByAddr)
 		user 	:= structs.User{}
 
 		if obj == nil {
@@ -42,25 +47,27 @@ func Handle(req structs.Request, conns []net.Conn) string {
 		var msg = structs.Message {}
 		msg.Init(idGen.Gen(), user_name, text)
 
-		string_msg  := response.Marshal(action.Say, []string{user_name, text})
-
 		MsgDb.Write(msg)
-		connection.Send(conns, string_msg)
-
-		return response.MessageSaved
+		user_network.SendToAllUsers([]byte(msg.Marshal()))
 
 	case action.CreateUser:
 		name := req.Param[0]
-		user := structs.User {}
+		obj  := UserDb.Find(name, nil_user, nil)
 
-		user.Init(req.Addr, name)
+		if obj == nil {
+			user := structs.User {}
+			user.Init(req.Addr, name)
 
-		UserDb.Write(user)
-		return response.UserSaved
+			UserDb.Write(user)
+			return response.UserSaved
+		} else {
+			return response.UserExists
+		}
+		
 		
 	case action.RemoveUser:
 		name := req.Param[0]
-		rb := UserDb.Find(req.Addr.String(), nil_user).(structs.User)
+		rb   := UserDb.Find(name, nil_user, nil).(structs.User)
 
 		if rb.Name() == name {
 			user := structs.User {}
@@ -75,8 +82,8 @@ func Handle(req structs.Request, conns []net.Conn) string {
 		
 	case action.RemoveMsg:
 		id := req.Param[0]
+		obj := MsgDb.Find(id, nil_msg, nil)
 
-		obj := MsgDb.Find(id, nil_msg);
 		msg := structs.Message{}
 
 		if obj == nil {
@@ -85,12 +92,12 @@ func Handle(req structs.Request, conns []net.Conn) string {
 			msg = obj.(structs.Message)
 		}
 
-		rb 	:= UserDb.Find(req.Addr.String(), nil_user).(structs.User)
-		connection.Send(conns, req.RawBody)
+		rb 	:= UserDb.Find(req.Addr.String(), nil_user, MatchUserByAddr).(structs.User)
+
+		user_network.SendToAllUsers([]byte(req.RawBody))
 
 		if msg.SendBy() == rb.Name() {
 			MsgDb.Remove(id)
-			return response.MessageRemoved
 		} else {
 			return response.AccessDenied
 		}
@@ -99,7 +106,7 @@ func Handle(req structs.Request, conns []net.Conn) string {
 		replace_with 	:= req.Param[1]
 		id 				:= req.Param[0]
 
-		obj 			:= MsgDb.Find(id, nil_msg)
+		obj 			:= MsgDb.Find(id, nil_msg, nil)
 		msg				:= structs.Message {}
 
 		if obj == nil {
@@ -108,13 +115,12 @@ func Handle(req structs.Request, conns []net.Conn) string {
 			msg = obj.(structs.Message)
 		}
 
-		rb 				:= UserDb.Find(req.Addr.String(), nil_user).(structs.User)
+		rb 				:= UserDb.Find(req.Addr.String(), nil_user, MatchUserByAddr).(structs.User)
 
-		connection.Send(conns, req.RawBody)
+		user_network.SendToAllUsers([]byte(req.RawBody))
 
 		if msg.SendBy() == rb.Name() {
 			MsgDb.ReplaceMsgText(id, replace_with)
-			return response.MessageRemoved
 		} else {
 			return response.AccessDenied
 		}
@@ -130,4 +136,6 @@ func Handle(req structs.Request, conns []net.Conn) string {
 	default:
 		return "Invalid action."
 	}
+	
+	return response.Empty
 }

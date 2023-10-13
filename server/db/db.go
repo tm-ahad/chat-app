@@ -1,10 +1,10 @@
 package db
 
 import (
-	"chat-app/handlers"
-	"chat-app/helpers"
-	"chat-app/interfaces"
-	"chat-app/structs"
+	"chat-app-server/handlers"
+	"chat-app-server/helpers"
+	"chat-app-server/interfaces"
+	"chat-app-server/structs"
 	"fmt"
 	"os"
 	"strings"
@@ -20,7 +20,7 @@ type DataBase struct {
 }
 
 func (db DataBase) Write(obj interfaces.Model) {
-	_, err := db.file.WriteString(obj.Marshal())
+	_, err := db.file.WriteString(obj.Marshal()+"\n")
 
 	handlers.HandleErr(err)
 }
@@ -29,7 +29,7 @@ func (db DataBase) RawCont() string {
 	return db.cont
 }
 
-func (db DataBase) Find(key string, obj interfaces.Model) interfaces.Model {
+func (db DataBase) Find(key string, obj interfaces.Model, filter func(interfaces.Model, string) bool) interfaces.Model {
 	val := db.cache[key]
 
 	if val == nil {
@@ -42,7 +42,13 @@ func (db DataBase) Find(key string, obj interfaces.Model) interfaces.Model {
 
 			obj.Unmarshal(line)
 
-			if obj.Unique() == key {
+			if filter == nil {
+				filter = func(m interfaces.Model, key string) bool {
+					return m.Unique() == key
+				}
+			}
+
+			if filter(obj, key) {
 				db.cache[key] = obj
 				return obj
 			}	

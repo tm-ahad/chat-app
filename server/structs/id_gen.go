@@ -1,7 +1,7 @@
 package structs
 
 import (
-	"chat-app/handlers"
+	"chat-app-server/handlers"
 	"strconv"
 	"strings"
 	"syscall"
@@ -25,7 +25,7 @@ func NewIdGen() IdGen {
 }
 
 func (inst *IdGen) Gen() uint64 {
-	s, _ := inst.file.Stat()
+	s, _  := inst.file.Stat()
 	f_len := s.Size()
 	f_len++
 
